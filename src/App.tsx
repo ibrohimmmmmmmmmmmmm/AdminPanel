@@ -1,0 +1,23 @@
+import { createBrowserRouter, RouterProvider } from "react-router-dom"
+import Layout from "./Layout/Layout"
+import { Dashboard, Login } from "./router/router"
+
+export default function App() {
+  const router = createBrowserRouter([
+    {
+      path : "/",
+      element :<Login />
+    },
+    {
+      path : "/admin",
+      element : <Layout />,
+      children : [
+        {
+          index : true,
+          element : <Dashboard />
+        }
+      ]
+    }
+  ])
+  return <RouterProvider router={router} />
+}

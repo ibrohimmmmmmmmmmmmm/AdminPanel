@@ -1,6 +1,6 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom"
 import Layout from "./Layout/Layout"
-import { Dashboard, Login } from "./router/router"
+import { Dashboard, Login, Product } from "./router/router"
 
 export default function App() {
   const router = createBrowserRouter([
@@ -15,6 +15,10 @@ export default function App() {
         {
           index : true,
           element : <Dashboard />
+        },
+        {
+          path: "products",
+          element: <Product />
         }
       ]
     }

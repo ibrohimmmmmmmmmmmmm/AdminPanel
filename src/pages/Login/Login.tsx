@@ -28,6 +28,7 @@ export default function Login() {
 
       if (token) {
         localStorage.setItem("token", token);
+        localStorage.setItem("access", token);
         navigate("/admin");
         reset();
       } else {

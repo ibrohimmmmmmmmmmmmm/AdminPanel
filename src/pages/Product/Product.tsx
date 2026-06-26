@@ -25,6 +25,11 @@ export interface Product {
   colorId: number;
 }
 
+export interface Color { id: number; colorName: string; }
+export interface Brand { id: number; brandName: string; }
+export interface Category { id: number; categoryName: string; }
+export interface SubCategory { id: number; subCategoryName: string; categoryId: number; }
+
 interface ProductState {
   products: Product[];
   loading: boolean;
@@ -37,6 +42,11 @@ interface ProductState {
   categoryId: number | null;
   selectedProductIds: number[];
 
+  colors: Color[];
+  brands: Brand[];
+  categories: Category[];
+  subCategories: SubCategory[];
+
   setPage: (page: number) => void;
   setSearchQuery: (query: string) => void;
   setCategoryId: (id: number | null) => void;
@@ -45,6 +55,7 @@ interface ProductState {
   clearSelection: () => void;
 
   fetchProducts: () => Promise<void>;
+  fetchMetadata: () => Promise<void>;
   addProduct: (formData: FormData) => Promise<boolean>;
   updateProduct: (id: number, data: any) => Promise<boolean>;
   deleteProduct: (id: number) => Promise<boolean>;
@@ -61,6 +72,11 @@ export const useProductStore = create<ProductState>((set, get) => ({
   searchQuery: "",
   categoryId: null,
   selectedProductIds: [],
+  
+  colors: [],
+  brands: [],
+  categories: [],
+  subCategories: [],
 
   setPage: (page) => {
     set({ pageNumber: page });
@@ -123,12 +139,29 @@ export const useProductStore = create<ProductState>((set, get) => ({
     }
   },
 
+  fetchMetadata: async () => {
+    try {
+      const [colorsRes, brandsRes, categoriesRes, subCatRes] = await Promise.all([
+        axiosRequest.get('/Color/get-colors?PageNumber=1&PageSize=100'),
+        axiosRequest.get('/Brand/get-brands?PageNumber=1&PageSize=100'),
+        axiosRequest.get('/Category/get-categories'),
+        axiosRequest.get('/SubCategory/get-sub-category')
+      ]);
+      set({
+        colors: Array.isArray(colorsRes.data) ? colorsRes.data : (colorsRes.data?.data || []),
+        brands: Array.isArray(brandsRes.data) ? brandsRes.data : (brandsRes.data?.data || []),
+        categories: Array.isArray(categoriesRes.data) ? categoriesRes.data : (categoriesRes.data?.data || []),
+        subCategories: Array.isArray(subCatRes.data) ? subCatRes.data : (subCatRes.data?.data || [])
+      });
+    } catch (error) {
+      console.error("Fetch metadata error:", error);
+    }
+  },
+
   addProduct: async (formData) => {
     set({ loading: true, error: null });
     try {
-      await axiosRequest.post("/Product/add-product", formData, {
-        headers: { "Content-Type": "multipart/form-data" }
-      });
+      await axiosRequest.post("/Product/add-product", formData);
       await get().fetchProducts();
       return true;
     } catch (error: any) {
@@ -178,7 +211,7 @@ export const useProductStore = create<ProductState>((set, get) => ({
 // --- MODALS ---
 
 const AddProductModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
-  const { addProduct } = useProductStore();
+  const { addProduct, brands, colors, subCategories } = useProductStore();
   const { register, handleSubmit, formState: { errors }, reset } = useForm();
 
   if (!isOpen) return null;
@@ -194,6 +227,9 @@ const AddProductModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
     formData.append("ProductName", data.ProductName || "");
     formData.append("Quantity", data.Quantity || 0);
     formData.append("SubCategoryId", data.SubCategoryId || 0);
+    formData.append("Weight", "0");
+    formData.append("Size", "0");
+    formData.append("DiscountPrice", "0");
     
     if (data.Images && data.Images.length > 0) {
       for (let i = 0; i < data.Images.length; i++) {
@@ -242,15 +278,24 @@ const AddProductModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Brand ID</label>
-              <input type="number" {...register("BrandId")} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="0" />
+              <select {...register("BrandId", { required: true })} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                <option value="">Select Brand</option>
+                {brands.map(b => <option key={b.id} value={b.id}>{b.brandName}</option>)}
+              </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Color ID</label>
-              <input type="number" {...register("ColorId")} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="0" />
+              <select {...register("ColorId", { required: true })} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                <option value="">Select Color</option>
+                {colors.map(c => <option key={c.id} value={c.id}>{c.colorName}</option>)}
+              </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">SubCategory ID</label>
-              <input type="number" {...register("SubCategoryId")} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="0" />
+              <select {...register("SubCategoryId", { required: true })} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                <option value="">Select SubCategory</option>
+                {subCategories.map(sc => <option key={sc.id} value={sc.id}>{sc.subCategoryName}</option>)}
+              </select>
             </div>
             <div className="col-span-2 flex items-center gap-2">
               <input type="checkbox" id="HasDiscount" {...register("HasDiscount")} className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
@@ -276,7 +321,7 @@ const AddProductModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
 };
 
 const EditProductModal = ({ isOpen, onClose, product }: { isOpen: boolean; onClose: () => void; product: Product | null }) => {
-  const { updateProduct } = useProductStore();
+  const { updateProduct, brands, colors, subCategories } = useProductStore();
   const { register, handleSubmit, formState: { errors }, reset } = useForm();
 
   useEffect(() => {
@@ -354,15 +399,24 @@ const EditProductModal = ({ isOpen, onClose, product }: { isOpen: boolean; onClo
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Brand ID</label>
-              <input type="number" {...register("BrandId")} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="0" />
+              <select {...register("BrandId", { required: true })} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                <option value="">Select Brand</option>
+                {brands.map(b => <option key={b.id} value={b.id}>{b.brandName}</option>)}
+              </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Color ID</label>
-              <input type="number" {...register("ColorId")} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="0" />
+              <select {...register("ColorId", { required: true })} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                <option value="">Select Color</option>
+                {colors.map(c => <option key={c.id} value={c.id}>{c.colorName}</option>)}
+              </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">SubCategory ID</label>
-              <input type="number" {...register("SubCategoryId")} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="0" />
+              <select {...register("SubCategoryId", { required: true })} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                <option value="">Select SubCategory</option>
+                {subCategories.map(sc => <option key={sc.id} value={sc.id}>{sc.subCategoryName}</option>)}
+              </select>
             </div>
             <div className="col-span-2 flex items-center gap-2">
               <input type="checkbox" id="EditHasDiscount" {...register("HasDiscount")} className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
@@ -427,6 +481,7 @@ export default function ProductPage() {
     toggleAllSelection,
     clearSelection,
     fetchProducts,
+    fetchMetadata,
     deleteProduct,
   } = useProductStore();
 
@@ -437,6 +492,7 @@ export default function ProductPage() {
 
   useEffect(() => {
     fetchProducts();
+    fetchMetadata();
   }, []);
 
   const handleSearch = (e: React.FormEvent) => {

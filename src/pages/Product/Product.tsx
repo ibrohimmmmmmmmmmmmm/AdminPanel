@@ -463,6 +463,25 @@ const DeleteProductModal = ({ isOpen, onClose, product }: { isOpen: boolean; onC
   );
 };
 
+const BulkDeleteModal = ({ isOpen, onClose, count, onConfirm }: { isOpen: boolean; onClose: () => void; count: number; onConfirm: () => void }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+      <div className="bg-white rounded-lg w-full max-w-md p-6">
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">Bulk Delete Products</h2>
+        <p className="text-gray-600 mb-6">
+          Are you sure you want to delete <span className="font-semibold text-gray-900">{count}</span> products? This action cannot be undone.
+        </p>
+        <div className="flex justify-end gap-3">
+          <button onClick={onClose} className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 font-medium transition-colors">Cancel</button>
+          <button onClick={onConfirm} className="px-4 py-2 bg-red-600 rounded-md text-white hover:bg-red-700 font-medium transition-colors">Delete All</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // --- MAIN PAGE COMPONENT ---
 
 export default function ProductPage() {
@@ -487,6 +506,8 @@ export default function ProductPage() {
 
   const [searchInput, setSearchInput] = useState(searchQuery);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
+  const [sortFilter, setSortFilter] = useState("Newest");
   const [editProduct, setEditProduct] = useState<Product | null>(null);
   const [deleteProductItem, setDeleteProductItem] = useState<Product | null>(null);
 
@@ -505,18 +526,22 @@ export default function ProductPage() {
     if (isChecked) {
       toggleAllSelection(products.map(p => p.id));
     } else {
-      toggleAllSelection(products.map(p => p.id));
-    }
-  };
-
-  const handleBulkDelete = async () => {
-    if (window.confirm(`Are you sure you want to delete ${selectedProductIds.length} products?`)) {
-      for (const id of selectedProductIds) {
-        await deleteProduct(id);
-      }
       clearSelection();
     }
   };
+
+  const confirmBulkDelete = async () => {
+    setIsBulkDeleteModalOpen(false);
+    for (const id of selectedProductIds) {
+      await deleteProduct(id);
+    }
+    clearSelection();
+  };
+
+  const sortedProducts = [...products].sort((a, b) => {
+    if (sortFilter === "Oldest") return a.id - b.id;
+    return b.id - a.id;
+  });
 
   const allSelected = products.length > 0 && products.every(p => selectedProductIds.includes(p.id));
 
@@ -536,27 +561,25 @@ export default function ProductPage() {
 
       {/* Toolbar */}
       <div className="flex justify-between items-center mb-6">
-        <div className="flex items-center gap-4">
-          <form onSubmit={handleSearch} className="relative w-[320px]">
-            <input
-              type="text"
-              placeholder="Search..."
+        <div className="flex items-center gap-3">
+          <form onSubmit={handleSearch} className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+            <input 
+              type="text" 
+              placeholder="Search Product Name + Enter" 
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              className="w-full pl-4 pr-10 py-2.5 border border-gray-200 rounded-md focus:outline-none focus:border-blue-500 text-gray-600 placeholder-gray-400"
+              className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-64 text-sm"
             />
-            <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
-              <Search size={20} />
-            </button>
           </form>
-
-          <div className="relative">
-            <span className="absolute -top-2.5 left-3 bg-white px-1 text-xs font-medium text-gray-500">Filter</span>
-            <button className="flex items-center justify-between border border-gray-200 rounded-md px-4 py-2.5 bg-white text-gray-700 min-w-[140px]">
-              Newest
-              <ChevronDown size={18} className="text-gray-400" />
-            </button>
-          </div>
+          <select 
+            value={sortFilter}
+            onChange={(e) => setSortFilter(e.target.value)}
+            className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-sm text-gray-700"
+          >
+            <option value="Newest">Filter: Newest</option>
+            <option value="Oldest">Filter: Oldest</option>
+          </select>
         </div>
 
         {/* Action Buttons */}
@@ -574,7 +597,7 @@ export default function ProductPage() {
           <button 
             className="p-2.5 border border-gray-200 text-red-500 hover:bg-red-50 rounded-md transition-colors disabled:opacity-50"
             disabled={selectedProductIds.length === 0}
-            onClick={handleBulkDelete}
+            onClick={() => setIsBulkDeleteModalOpen(true)}
           >
             <Trash2 size={20} />
           </button>
@@ -601,19 +624,19 @@ export default function ProductPage() {
               <th className="py-4 px-4 font-normal">Action</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-gray-200">
             {loading ? (
               <tr>
                 <td colSpan={6} className="text-center p-8 text-gray-500">Loading products...</td>
               </tr>
-            ) : products.length === 0 ? (
+            ) : sortedProducts.length === 0 ? (
               <tr>
                 <td colSpan={6} className="text-center p-8 text-gray-500">No products found.</td>
               </tr>
             ) : (
-              products.map((product) => (
-                <tr key={product.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="py-4 px-4">
+              sortedProducts.map((product) => (
+                <tr key={product.id} className="hover:bg-gray-50/50 transition-colors">
+                  <td className="py-4 px-4 w-12">
                     <input
                       type="checkbox"
                       checked={selectedProductIds.includes(product.id)}
@@ -741,6 +764,12 @@ export default function ProductPage() {
       <AddProductModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} />
       <EditProductModal isOpen={!!editProduct} onClose={() => setEditProduct(null)} product={editProduct} />
       <DeleteProductModal isOpen={!!deleteProductItem} onClose={() => setDeleteProductItem(null)} product={deleteProductItem} />
+      <BulkDeleteModal 
+        isOpen={isBulkDeleteModalOpen} 
+        onClose={() => setIsBulkDeleteModalOpen(false)} 
+        count={selectedProductIds.length} 
+        onConfirm={confirmBulkDelete} 
+      />
     </div>
   );
 }

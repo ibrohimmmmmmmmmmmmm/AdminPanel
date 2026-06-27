@@ -5,4 +5,13 @@ import tailwindcss from '@tailwindcss/vite'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(),tailwindcss()],
+  server: {
+    proxy: {
+      '/api-proxy': {
+        target: 'https://store-api.softclub.tj',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api-proxy/, '')
+      }
+    }
+  }
 })

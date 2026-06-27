@@ -56,8 +56,11 @@ export const CategoriesTab = () => {
     reset();
   };
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const onSubmit = async (data: CategoryFormData) => {
     try {
+      setIsSubmitting(true);
       const formData = new FormData();
       formData.append("CategoryName", data.categoryName);
       
@@ -65,6 +68,19 @@ export const CategoriesTab = () => {
         formData.append("Id", editingCategory.id.toString());
         if (data.categoryImage && data.categoryImage.length > 0) {
           formData.append("CategoryImage", data.categoryImage[0]);
+        } else if (editingCategory.categoryImage) {
+          try {
+            // Using Vite proxy to bypass CORS
+            const response = await fetch(`/api-proxy/images/${editingCategory.categoryImage}`);
+            if (!response.ok) throw new Error("Network response was not ok");
+            const blob = await response.blob();
+            // Append as File so backend validation passes
+            formData.append("CategoryImage", new File([blob], editingCategory.categoryImage, { type: blob.type || "image/jpeg" }));
+          } catch (e) {
+            console.error("Failed to fetch existing image through proxy", e);
+            // If it still fails, the user will just have to select a new image, 
+            // but we won't send an empty string so they see the real backend error.
+          }
         }
         await updateCategory(formData);
         toast.success("Category updated successfully");
@@ -80,6 +96,8 @@ export const CategoriesTab = () => {
       closeModal();
     } catch (error: any) {
       toast.error(error?.response?.data?.message || "Something went wrong");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -218,6 +236,19 @@ export const CategoriesTab = () => {
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Category Image</label>
+                {editingCategory && editingCategory.categoryImage && (
+                  <div className="mb-3">
+                    <p className="text-xs text-gray-500 mb-1">Current Image:</p>
+                    <img 
+                      src={`${import.meta.env.VITE_BASE_URL}/images/${editingCategory.categoryImage}`} 
+                      alt="Current" 
+                      className="w-16 h-16 object-contain border rounded-md"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = 'https://via.placeholder.com/64?text=Error';
+                      }}
+                    />
+                  </div>
+                )}
                 <input
                   type="file"
                   accept="image/*"
@@ -237,9 +268,10 @@ export const CategoriesTab = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  disabled={isSubmitting}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-400"
                 >
-                  Save
+                  {isSubmitting ? "Saving..." : "Save"}
                 </button>
               </div>
             </form>

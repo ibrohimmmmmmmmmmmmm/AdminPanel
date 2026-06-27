@@ -1,6 +1,6 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom"
 import Layout from "./Layout/Layout"
-import { Dashboard, Login, Product, Order, Other, AddProductDetails, EditProductDetails, Users } from "./router/router"
+import { Dashboard, Login, Product, Order, Other, AddProductDetails, EditProductDetails } from "./router/router"
 import { Toaster } from "sonner"
 
 import ProtectedRoute from "./router/ProtectedRoute"
@@ -22,10 +22,6 @@ export default function App() {
         {
           index : true,
           element : <Dashboard />
-        },
-        {
-          path: "users",
-          element: <Users />
         },
         {
           path: "products",

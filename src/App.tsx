@@ -1,6 +1,7 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom"
 import Layout from "./Layout/Layout"
 import { Dashboard, Login, Product, Order, Other } from "./router/router"
+import { Toaster } from "sonner"
 
 export default function App() {
   const router = createBrowserRouter([
@@ -31,5 +32,10 @@ export default function App() {
       ]
     }
   ])
-  return <RouterProvider router={router} />
+  return (
+    <>
+      <Toaster position="top-right" richColors />
+      <RouterProvider router={router} />
+    </>
+  )
 }

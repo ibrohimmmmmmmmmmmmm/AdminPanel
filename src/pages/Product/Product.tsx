@@ -3,6 +3,7 @@ import { create } from "zustand";
 import { axiosRequest } from "../../utils/axios";
 import { Search, Plus, Trash2, Edit, ChevronDown, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useForm } from "react-hook-form";
+import { useNavigate } from "react-router-dom";
 
 // --- ZUSTAND STORE ---
 export interface Product {
@@ -210,228 +211,7 @@ export const useProductStore = create<ProductState>((set, get) => ({
 
 // --- MODALS ---
 
-const AddProductModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
-  const { addProduct, brands, colors, subCategories } = useProductStore();
-  const { register, handleSubmit, formState: { errors }, reset } = useForm();
-
-  if (!isOpen) return null;
-
-  const onSubmit = async (data: any) => {
-    const formData = new FormData();
-    formData.append("BrandId", data.BrandId || 0);
-    formData.append("Code", data.Code || "");
-    formData.append("ColorId", data.ColorId || 0);
-    formData.append("Description", data.Description || "");
-    // formData.append("HasDiscount", data.HasDiscount ? "true" : "false");
-    formData.append("Price", data.Price || 0);
-    formData.append("ProductName", data.ProductName || "");
-    formData.append("Quantity", data.Quantity || 0);
-    formData.append("SubCategoryId", data.SubCategoryId || 0);
-    formData.append("Weight", "0");
-    formData.append("Size", "0");
-    formData.append("DiscountPrice", "0");
-    
-    if (data.Images && data.Images.length > 0) {
-      for (let i = 0; i < data.Images.length; i++) {
-        formData.append("Images", data.Images[i]);
-      }
-    }
-
-    const success = await addProduct(formData);
-    if (success) {
-      reset();
-      onClose();
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">Add Product</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
-            <X size={24} />
-          </button>
-        </div>
-        <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-6">
-          <div className="grid grid-cols-2 gap-6">
-            <div className="col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Product Name</label>
-              <input
-                {...register("ProductName", { required: true })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter product name"
-              />
-              {errors.ProductName && <span className="text-red-500 text-xs mt-1">This field is required</span>}
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Price</label>
-              <input type="number" step="0.01" {...register("Price", { required: true })} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="0.00" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
-              <input type="number" {...register("Quantity", { required: true })} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="0" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Code</label>
-              <input {...register("Code")} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Product Code" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Brand ID</label>
-              <select {...register("BrandId", { required: true })} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
-                <option value="">Select Brand</option>
-                {brands.map(b => <option key={b.id} value={b.id}>{b.brandName}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Color ID</label>
-              <select {...register("ColorId", { required: true })} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
-                <option value="">Select Color</option>
-                {colors.map(c => <option key={c.id} value={c.id}>{c.colorName}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">SubCategory ID</label>
-              <select {...register("SubCategoryId", { required: true })} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
-                <option value="">Select SubCategory</option>
-                {subCategories.map(sc => <option key={sc.id} value={sc.id}>{sc.subCategoryName}</option>)}
-              </select>
-            </div>
-            <div className="col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-              <textarea {...register("Description")} rows={3} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter product description"></textarea>
-            </div>
-            <div className="col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Images</label>
-              <input type="file" multiple {...register("Images")} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
-            </div>
-          </div>
-          <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
-            <button type="button" onClick={onClose} className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 font-medium transition-colors">Cancel</button>
-            <button type="submit" className="px-4 py-2 bg-blue-600 rounded-md text-white hover:bg-blue-700 font-medium transition-colors">Save Product</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-};
-
-const EditProductModal = ({ isOpen, onClose, product }: { isOpen: boolean; onClose: () => void; product: Product | null }) => {
-  const { updateProduct, brands, colors, subCategories } = useProductStore();
-  const { register, handleSubmit, formState: { errors }, reset } = useForm();
-
-  useEffect(() => {
-    if (product && isOpen) {
-      reset({
-        ProductName: product.productName,
-        Price: product.price,
-        Quantity: product.quantity,
-        Code: product.code,
-        BrandId: product.brandId,
-        ColorId: product.colorId,
-        SubCategoryId: product.subCategoryId,
-        HasDiscount: product.hasDiscount,
-        Description: product.description,
-      });
-    }
-  }, [product, isOpen, reset]);
-
-  if (!isOpen || !product) return null;
-
-  const onSubmit = async (data: any) => {
-    const payload = {
-      BrandId: data.BrandId || 0,
-      Code: data.Code || "",
-      ColorId: data.ColorId || 0,
-      Description: data.Description || "",
-      HasDiscount: data.HasDiscount ? true : false,
-      Price: data.Price || 0,
-      ProductName: data.ProductName || "",
-      Quantity: data.Quantity || 0,
-      SubCategoryId: data.SubCategoryId || 0,
-      Weight: "0",
-      Size: "0",
-      DiscountPrice: 0
-    };
-
-    const success = await updateProduct(product.id, payload);
-    if (success) {
-      reset();
-      onClose();
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">Edit Product</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
-            <X size={24} />
-          </button>
-        </div>
-        <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-6">
-          <div className="grid grid-cols-2 gap-6">
-            <div className="col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Product Name</label>
-              <input
-                {...register("ProductName", { required: true })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter product name"
-              />
-              {errors.ProductName && <span className="text-red-500 text-xs mt-1">This field is required</span>}
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Price</label>
-              <input type="number" step="0.01" {...register("Price", { required: true })} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="0.00" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
-              <input type="number" {...register("Quantity", { required: true })} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="0" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Code</label>
-              <input {...register("Code")} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Product Code" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Brand ID</label>
-              <select {...register("BrandId", { required: true })} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
-                <option value="">Select Brand</option>
-                {brands.map(b => <option key={b.id} value={b.id}>{b.brandName}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Color ID</label>
-              <select {...register("ColorId", { required: true })} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
-                <option value="">Select Color</option>
-                {colors.map(c => <option key={c.id} value={c.id}>{c.colorName}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">SubCategory ID</label>
-              <select {...register("SubCategoryId", { required: true })} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
-                <option value="">Select SubCategory</option>
-                {subCategories.map(sc => <option key={sc.id} value={sc.id}>{sc.subCategoryName}</option>)}
-              </select>
-            </div>
-            <div className="col-span-2 flex items-center gap-2">
-              <input type="checkbox" id="EditHasDiscount" {...register("HasDiscount")} className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
-              <label htmlFor="EditHasDiscount" className="text-sm font-medium text-gray-700">Has Discount?</label>
-            </div>
-            <div className="col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-              <textarea {...register("Description")} rows={3} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter product description"></textarea>
-            </div>
-          </div>
-          <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
-            <button type="button" onClick={onClose} className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 font-medium transition-colors">Cancel</button>
-            <button type="submit" className="px-4 py-2 bg-blue-600 rounded-md text-white hover:bg-blue-700 font-medium transition-colors">Save Changes</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-};
+// Add and Edit Modals were moved to separate pages
 
 const DeleteProductModal = ({ isOpen, onClose, product }: { isOpen: boolean; onClose: () => void; product: Product | null }) => {
   const { deleteProduct } = useProductStore();
@@ -500,11 +280,11 @@ export default function ProductPage() {
     deleteProduct,
   } = useProductStore();
 
+  const navigate = useNavigate();
+
   const [searchInput, setSearchInput] = useState(searchQuery);
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
   const [sortFilter, setSortFilter] = useState("Newest");
-  const [editProduct, setEditProduct] = useState<Product | null>(null);
   const [deleteProductItem, setDeleteProductItem] = useState<Product | null>(null);
 
   useEffect(() => {
@@ -548,7 +328,7 @@ export default function ProductPage() {
         <h1 className="text-[32px] font-bold text-gray-900">Products</h1>
         <button 
           className="flex items-center gap-2 bg-[#2563EB] hover:bg-blue-700 text-white px-5 py-2.5 rounded-md font-medium transition-colors"
-          onClick={() => setIsAddModalOpen(true)}
+          onClick={() => navigate("/admin/products/add")}
         >
           <Plus size={20} />
           Add order
@@ -585,7 +365,7 @@ export default function ProductPage() {
             disabled={selectedProductIds.length !== 1}
             onClick={() => {
               const prod = products.find(p => p.id === selectedProductIds[0]);
-              if (prod) setEditProduct(prod);
+              if (prod) navigate("/admin/products/edit/" + prod.id, { state: { product: prod } });
             }}
           >
             <Edit size={20} />
@@ -671,7 +451,7 @@ export default function ProductPage() {
                     <div className="flex items-center gap-4">
                       <button 
                         className="text-[#2563EB] hover:text-blue-800 transition-colors"
-                        onClick={() => setEditProduct(product)}
+                        onClick={() => navigate("/admin/products/edit/" + product.id, { state: { product } })}
                       >
                         <Edit size={20} />
                       </button>
@@ -757,8 +537,6 @@ export default function ProductPage() {
       </div>
 
       {/* Modals */}
-      <AddProductModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} />
-      <EditProductModal isOpen={!!editProduct} onClose={() => setEditProduct(null)} product={editProduct} />
       <DeleteProductModal isOpen={!!deleteProductItem} onClose={() => setDeleteProductItem(null)} product={deleteProductItem} />
       <BulkDeleteModal 
         isOpen={isBulkDeleteModalOpen} 

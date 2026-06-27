@@ -1,7 +1,9 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom"
 import Layout from "./Layout/Layout"
-import { Dashboard, Login, Product, Order, Other } from "./router/router"
+import { Dashboard, Login, Product, Order, Other, AddProductDetails, EditProductDetails, Users } from "./router/router"
 import { Toaster } from "sonner"
+
+import ProtectedRoute from "./router/ProtectedRoute"
 
 export default function App() {
   const router = createBrowserRouter([
@@ -11,15 +13,31 @@ export default function App() {
     },
     {
       path : "/admin",
-      element : <Layout />,
+      element : (
+        <ProtectedRoute>
+          <Layout />
+        </ProtectedRoute>
+      ),
       children : [
         {
           index : true,
           element : <Dashboard />
         },
         {
+          path: "users",
+          element: <Users />
+        },
+        {
           path: "products",
           element: <Product />
+        },
+        {
+          path: "products/add",
+          element: <AddProductDetails />
+        },
+        {
+          path: "products/edit/:id",
+          element: <EditProductDetails />
         },
         {
           path: "orders",

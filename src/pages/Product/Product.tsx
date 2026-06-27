@@ -222,7 +222,7 @@ const AddProductModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
     formData.append("Code", data.Code || "");
     formData.append("ColorId", data.ColorId || 0);
     formData.append("Description", data.Description || "");
-    formData.append("HasDiscount", data.HasDiscount ? "true" : "false");
+    // formData.append("HasDiscount", data.HasDiscount ? "true" : "false");
     formData.append("Price", data.Price || 0);
     formData.append("ProductName", data.ProductName || "");
     formData.append("Quantity", data.Quantity || 0);
@@ -296,10 +296,6 @@ const AddProductModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
                 <option value="">Select SubCategory</option>
                 {subCategories.map(sc => <option key={sc.id} value={sc.id}>{sc.subCategoryName}</option>)}
               </select>
-            </div>
-            <div className="col-span-2 flex items-center gap-2">
-              <input type="checkbox" id="HasDiscount" {...register("HasDiscount")} className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
-              <label htmlFor="HasDiscount" className="text-sm font-medium text-gray-700">Has Discount?</label>
             </div>
             <div className="col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>

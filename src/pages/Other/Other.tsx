@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { CategoriesTab } from './CategoriesTab';
+import { BrandsTab } from './BrandsTab';
 
 export default function Other() {
   const [activeTab, setActiveTab] = useState('Categories');
@@ -26,7 +27,7 @@ export default function Other() {
 
       <div>
         {activeTab === 'Categories' && <CategoriesTab />}
-        {activeTab === 'Brands' && <div className="text-gray-500">Brands component will be here</div>}
+        {activeTab === 'Brands' && <BrandsTab />}
         {activeTab === 'Banners' && <div className="text-gray-500">Banners component will be here</div>}
       </div>
     </div>

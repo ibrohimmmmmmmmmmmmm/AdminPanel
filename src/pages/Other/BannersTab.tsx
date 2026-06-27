@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 
 interface BannerFormData {
-  categoryId: number;
+  categoryId: string;
   subCategoryName: string;
 }
 
@@ -43,12 +43,12 @@ export const BannersTab = () => {
     if (item) {
       setEditingSubCategory(item);
       reset({
-        categoryId: item.categoryId,
-        subCategoryName: item.subCategoryName,
+        categoryId: String(item.categoryId || item.CategoryId || ""), // strictly string
+        subCategoryName: item.subCategoryName || item.SubCategoryName,
       });
     } else {
       setEditingSubCategory(null);
-      reset({ subCategoryName: "", categoryId: categories[0]?.id || "" });
+      reset({ subCategoryName: "", categoryId: "" as any });
     }
     setIsModalOpen(true);
   };
@@ -61,11 +61,12 @@ export const BannersTab = () => {
 
   const onSubmit = async (data: BannerFormData) => {
     try {
+      const catId = Number(data.categoryId);
       if (editingSubCategory) {
-        await updateSubCategory(editingSubCategory.id, data.categoryId, data.subCategoryName);
+        await updateSubCategory(editingSubCategory.id, catId, data.subCategoryName);
         toast.success("SubCategory updated successfully");
       } else {
-        await addSubCategory(data.categoryId, data.subCategoryName);
+        await addSubCategory(catId, data.subCategoryName);
         toast.success("SubCategory added successfully");
       }
       closeModal();
@@ -203,12 +204,12 @@ export const BannersTab = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Parent Category</label>
                 <select
-                  {...register("categoryId", { required: "Category is required", valueAsNumber: true })}
+                  {...register("categoryId", { required: "Category is required" })}
                   className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Select a category</option>
                   {categories?.map((cat) => (
-                    <option key={cat.id} value={cat.id}>{cat.categoryName}</option>
+                    <option key={cat.id} value={String(cat.id)}>{cat.categoryName}</option>
                   ))}
                 </select>
                 {errors.categoryId && <span className="text-red-500 text-sm">{errors.categoryId.message}</span>}

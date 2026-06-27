@@ -18,6 +18,7 @@ export const CategoriesTab = () => {
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<any>(null);
+  const [categoryToDelete, setCategoryToDelete] = useState<number | null>(null);
   
   const { register, handleSubmit, reset, formState: { errors } } = useForm<CategoryFormData>();
 
@@ -101,14 +102,19 @@ export const CategoriesTab = () => {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (confirm("Are you sure you want to delete this category?")) {
-      try {
-        await deleteCategory(id);
-        toast.success("Category deleted");
-      } catch (error: any) {
-        toast.error("Failed to delete category");
-      }
+  const handleDelete = (id: number) => {
+    setCategoryToDelete(id);
+  };
+
+  const confirmDelete = async () => {
+    if (categoryToDelete === null) return;
+    try {
+      await deleteCategory(categoryToDelete);
+      toast.success("Category deleted");
+    } catch (error: any) {
+      toast.error("Failed to delete category");
+    } finally {
+      setCategoryToDelete(null);
     }
   };
 
@@ -275,6 +281,30 @@ export const CategoriesTab = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {categoryToDelete !== null && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-sm">
+            <h2 className="text-xl font-semibold mb-2 text-gray-900">Delete Category</h2>
+            <p className="text-gray-600 mb-6">Are you sure you want to delete this category? This action cannot be undone.</p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setCategoryToDelete(null)}
+                className="px-4 py-2 border rounded-lg hover:bg-gray-50 text-gray-700 font-medium transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition-colors"
+              >
+                Delete
+              </button>
+            </div>
           </div>
         </div>
       )}

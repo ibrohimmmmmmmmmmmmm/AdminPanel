@@ -11,6 +11,7 @@ interface BrandFormData {
 export const BrandsTab = () => {
   const { brands, getBrands, addBrand, updateBrand, deleteBrand, loading } = useBrandStore();
   const [editingBrand, setEditingBrand] = useState<any>(null);
+  const [brandToDelete, setBrandToDelete] = useState<number | null>(null);
   
   const { register, handleSubmit, reset, formState: { errors } } = useForm<BrandFormData>();
 
@@ -44,14 +45,19 @@ export const BrandsTab = () => {
     reset({ brandName: "" });
   };
 
-  const handleDelete = async (id: number) => {
-    if (confirm("Are you sure you want to delete this brand?")) {
-      try {
-        await deleteBrand(id);
-        toast.success("Brand deleted");
-      } catch (error: any) {
-        toast.error("Failed to delete brand");
-      }
+  const handleDelete = (id: number) => {
+    setBrandToDelete(id);
+  };
+
+  const confirmDelete = async () => {
+    if (brandToDelete === null) return;
+    try {
+      await deleteBrand(brandToDelete);
+      toast.success("Brand deleted");
+    } catch (error: any) {
+      toast.error("Failed to delete brand");
+    } finally {
+      setBrandToDelete(null);
     }
   };
 
@@ -142,6 +148,30 @@ export const BrandsTab = () => {
           </form>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {brandToDelete !== null && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-sm">
+            <h2 className="text-xl font-semibold mb-2 text-gray-900">Delete Brand</h2>
+            <p className="text-gray-600 mb-6">Are you sure you want to delete this brand? This action cannot be undone.</p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setBrandToDelete(null)}
+                className="px-4 py-2 border rounded-lg hover:bg-gray-50 text-gray-700 font-medium transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
